@@ -40,35 +40,32 @@ If optional ARG argument is non nil, insert that number of
 passphrases.  When the function is called interactively, ARG is
 given by the numeric prefix argument."
   (interactive "*fWord list file: \nnNumber of words: \np")
-  (let ((buffer (current-buffer)) word)
+  (let ((origbuffer (current-buffer)) tempbuffer)
     (with-temp-buffer
+      (setq tempbuffer (current-buffer))
       (insert-file-contents wordlist)
-      (mapc
-       (lambda (k)
-	 (save-match-data
-	   ;; Repeat `number' times.
-	   (mapc
-	    (lambda (n)
-	      (save-excursion
-		;; Search for the next word.
-		(re-search-forward
-		 (concat "^"
-			 ;; Roll 5 dice.
-			 (apply 'concat (mapcar
-					 (lambda (d)
-					   (number-to-string (1+ (random 5))))
-					 (number-sequence 1 5)))
-			 "[ \t]*\\(.*\\)$") nil t))
-	      (setq word (match-string-no-properties 1))
-	      ;; Insert the new word, followed by a space.
-	      (with-current-buffer buffer
-		(insert (concat word (and (< n number) " ")))))
-	    (number-sequence 1 number)))
-	 ;; Go to a new line to insert a new passphrase, if needed.
-	 (and arg (< k arg)
-	      (with-current-buffer buffer
-		(newline))))
-       (number-sequence 1 (or arg 1))))))
+      (with-current-buffer origbuffer
+	(insert
+	 (mapconcat
+	  (lambda (k)
+	    ;; Repeat `number' times.
+	    (mapconcat
+	     (lambda (n)
+	       (with-current-buffer tempbuffer
+		 (save-excursion
+		   (save-match-data
+		     ;; Search for the next word.
+		     (re-search-forward
+		      (concat "^"
+			      ;; Roll 5 dice.
+			      (mapconcat
+			       (lambda (d)
+				 (number-to-string (1+ (random 5))))
+			       (number-sequence 1 5) "")
+			      "[ \t]*\\(.*\\)$") nil t)
+		     (match-string-no-properties 1)))))
+	     (number-sequence 1 number) " "))
+	  (number-sequence 1 (or arg 1)) "\n"))))))
 
 (provide 'diceware)
 
