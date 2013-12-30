@@ -40,32 +40,28 @@ If optional ARG argument is non nil, insert that number of
 passphrases.  When the function is called interactively, ARG is
 given by the numeric prefix argument."
   (interactive "*fWord list file: \nnNumber of words: \np")
-  (let ((origbuffer (current-buffer)) tempbuffer)
-    (with-temp-buffer
-      (setq tempbuffer (current-buffer))
-      (insert-file-contents wordlist)
-      (with-current-buffer origbuffer
-	(insert
-	 (mapconcat
-	  (lambda (k)
-	    ;; Repeat `number' times.
-	    (mapconcat
-	     (lambda (n)
-	       (with-current-buffer tempbuffer
-		 (save-excursion
-		   (save-match-data
-		     ;; Search for the next word.
-		     (re-search-forward
-		      (concat "^"
-			      ;; Roll 5 dice.
-			      (mapconcat
-			       (lambda (d)
-				 (number-to-string (1+ (random 5))))
-			       (number-sequence 1 5) "")
-			      "[ \t]*\\(.*\\)$") nil t)
-		     (match-string-no-properties 1)))))
-	     (number-sequence 1 number) " "))
-	  (number-sequence 1 (or arg 1)) "\n"))))))
+  (insert
+   (save-match-data
+     (with-temp-buffer
+       (insert-file-contents wordlist)
+       (mapconcat
+	(lambda (k)
+	  ;; Repeat `number' times.
+	  (mapconcat
+	   (lambda (n)
+	     (save-excursion
+	       ;; Search for the next word.
+	       (re-search-forward
+		(concat "^"
+			;; Roll 5 dice.
+			(mapconcat
+			 (lambda (d)
+			   (number-to-string (1+ (random 5))))
+			 (number-sequence 1 5) "")
+			"[ \t]*\\(.*\\)$") nil t)
+	       (match-string-no-properties 1)))
+	   (number-sequence 1 number) " "))
+	(number-sequence 1 (or arg 1)) "\n")))))
 
 (provide 'diceware)
 
